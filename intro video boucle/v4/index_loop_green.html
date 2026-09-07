@@ -1,0 +1,179 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Accueil — Nom de l'artiste (Green)</title>
+<style>
+@font-face { font-family:'Caveat'; src:url('Caveat-Bold.ttf') format('truetype'); font-weight:700; }
+@font-face { font-family:'Quicksand'; src:url('Quicksand-Bold.ttf') format('truetype'); font-weight:700; }
+@font-face { font-family:'Quicksand'; src:url('Quicksand-Medium.ttf') format('truetype'); font-weight:500; }
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; background:#0c0c0e; overflow:hidden; }
+
+.intro-wrap {
+  position:relative;
+  width:100vw;
+  height:100vh;
+  overflow:hidden;
+}
+
+#bgVideo {
+  position:absolute;
+  top:50%; left:50%;
+  width:100%; height:100%;
+  object-fit:cover;
+  transform:translate(-50%, -50%);
+  filter:brightness(1.35) saturate(1.08) contrast(1.02);
+}
+
+.butterflies {
+  position:absolute;
+  top:0; left:0;
+  width:140px;
+  height:140px;
+  transform:translate(-50%, -60%);
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 1s ease;
+  will-change:transform;
+  z-index:5;
+}
+.butterflies.visible { opacity:1; }
+.butterflies img { width:100%; height:100%; display:block; }
+
+.reveal {
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:34px;
+  pointer-events:none;
+}
+
+.artist-name {
+  font-family:'Caveat', cursive;
+  font-weight:700;
+  font-size:min(9vw, 110px);
+  color:#ffffff;
+  text-shadow:0 2px 6px rgba(0,0,0,0.55), 0 8px 30px rgba(0,0,0,0.45);
+  opacity:0;
+  transform:translateY(18px);
+  transition:opacity 1.4s ease, transform 1.4s ease;
+}
+.artist-name.visible { opacity:1; transform:translateY(0); }
+
+.enter-btn {
+  font-family:'Quicksand', sans-serif;
+  font-weight:700;
+  font-size:15px;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  color:#1c1c1c;
+  background:#ffffff;
+  border:none;
+  border-radius:999px;
+  padding:18px 40px;
+  cursor:pointer;
+  opacity:0;
+  transform:translateY(18px);
+  transition:opacity 1.4s ease 0.35s, transform 1.4s ease 0.35s, background 0.2s ease, color 0.2s ease;
+  pointer-events:none;
+}
+.enter-btn.visible { opacity:1; transform:translateY(0); pointer-events:auto; }
+.enter-btn:hover { background:#e8a0a0; color:#ffffff; }
+
+.loop-hint {
+  position:absolute;
+  bottom:26px; right:30px;
+  font-family:'Quicksand', sans-serif;
+  font-size:12px;
+  color:rgba(255,255,255,0.55);
+  letter-spacing:0.03em;
+  opacity:0;
+  transition:opacity 1s ease 1.6s;
+}
+.loop-hint.visible { opacity:1; }
+</style>
+</head>
+<body>
+
+<div class="intro-wrap">
+  <video id="bgVideo" autoplay muted loop playsinline preload="auto">
+    <source src="green_loop.mp4" type="video/mp4">
+  </video>
+
+  <div class="reveal">
+    <h1 class="artist-name" id="artistName">Nom de l'artiste</h1>
+    <button class="enter-btn" id="enterBtn">Entrer dans mon univers</button>
+  </div>
+
+  <div class="loop-hint" id="loopHint">ambiance en boucle</div>
+
+  <div class="butterflies" id="butterflies"><img src="papillons.gif" alt=""></div>
+</div>
+
+<script>
+  const video = document.getElementById('bgVideo');
+  const name = document.getElementById('artistName');
+  const btn = document.getElementById('enterBtn');
+  const hint = document.getElementById('loopHint');
+  const butterflies = document.getElementById('butterflies');
+
+  // Ici la vidéo tourne en boucle en continu comme fond d'ambiance
+  // (contrairement à la version "intro" qui se figeait sur le dernier dessin),
+  // et on ne l'assombrit pas : elle reste telle quelle, sans voile par-dessus.
+  // On révèle simplement le texte et le bouton après un court délai,
+  // une fois que la vidéo a commencé à jouer.
+  function reveal() {
+    name.classList.add('visible');
+    btn.classList.add('visible');
+    hint.classList.add('visible');
+  }
+
+  video.addEventListener('playing', () => {
+    setTimeout(reveal, 900);
+  }, { once: true });
+
+  // filet de sécurité si l'autoplay est bloqué par le navigateur
+  setTimeout(reveal, 2500);
+
+  btn.addEventListener('click', () => {
+    alert('Ici on redirigerait vers la page d\'accueil / la galerie du site.');
+  });
+
+  // --- Papillons qui suivent la souris, avec un mouvement lent et "flottant" ---
+  // On ne va jamais directement à la position de la souris : à chaque image,
+  // on ne parcourt qu'une petite fraction (EASING) de la distance restante,
+  // ce qui donne un effet de poursuite douce, avec un léger retard.
+  const EASING = 0.045; // plus petit = plus lent / plus "paresseux"
+  let targetX = window.innerWidth / 2;
+  let targetY = window.innerHeight / 2;
+  let curX = targetX;
+  let curY = targetY;
+  let started = false;
+
+  window.addEventListener('mousemove', (e) => {
+    targetX = e.clientX;
+    targetY = e.clientY;
+    if (!started) {
+      started = true;
+      curX = targetX;
+      curY = targetY;
+      butterflies.classList.add('visible');
+    }
+  });
+
+  function animateButterflies() {
+    curX += (targetX - curX) * EASING;
+    curY += (targetY - curY) * EASING;
+    butterflies.style.transform = `translate(${curX - 70}px, ${curY - 90}px)`;
+    requestAnimationFrame(animateButterflies);
+  }
+  requestAnimationFrame(animateButterflies);
+</script>
+
+</body>
+</html>
